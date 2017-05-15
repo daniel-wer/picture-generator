@@ -1,0 +1,49 @@
+<!doctype html>
+
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+
+  <title></title>
+  <meta name="description" content="The HTML5 Herald">
+  <meta name="author" content="Daniel Werner">
+
+  <link rel="stylesheet" href="css/styles.css?v=1.0">
+
+  <!-- DIN OT Bold font118413 -->
+  <link href="https://www.fontify.me/wf/f0a263903dacf24a2d4b161821d593da" rel="stylesheet" type="text/css">
+  <!-- DIN OT Medium font122550 -->
+  <link href="https://www.fontify.me/wf/65e5fae41b65048a1f9cf885464f28a2" rel="stylesheet" type="text/css">
+
+  <!--[if lt IE 9]>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv.js"></script>
+  <![endif]-->
+</head>
+
+<body>
+  <!-- Try to make sure the fonts are loaded -->
+  <div style="font-family: font122550;"> </div>
+  <div style="font-family: font118413;"> </div>
+
+  <div class="flex one center">
+    <div class="main-div">
+      <fieldset class="flex one center">
+        <h2>Was ist das für 1 Bildgenerator?</h2>
+        <label><textarea id="main-text" placeholder="Headline"></textarea></label>
+        <label><input id="sub-text" placeholder="Subline"></label>
+        <label><input class="none" id="image-text" placeholder="URL to background image"></label>
+      </fieldset>
+      <div class="flex one center">
+        <label class="dropimage miniprofile">
+          <input title="Drop background image or click me" id="image-drop" type="file">
+        </label>
+        <p>Use spaces to move individual lines to the right.<br />
+    Drag and drop the text to move it.</p>
+        <button id="download-button">Download generated picture</button>
+      </div>
+    </div>
+    <canvas id="main-canvas" width="960" height="960"></canvas>
+  </div>
+  <script src="js/generator.js"></script>
+</body>
+</html>
