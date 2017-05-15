@@ -5,6 +5,8 @@ const SUBLINE_FONT = `${SUBLINE_FONT_SIZE}px font122550`;
 const HEADLINE_DISTANCE = HEADLINE_FONT_SIZE / 95 * 120;
 const SUBLINE_DISTANCE = SUBLINE_FONT_SIZE / 95 * 120;
 const COLORS = ["#009ee3", "#ffed00", "#e5007d"];
+// canvas size in pixels divided by the size of the canvas html element
+const SCALE = 960 / 900;
 
 const FONTS = {
   headline: {
@@ -28,6 +30,7 @@ class Picture {
   constructor() {
     this.x = 100;
     this.y = 100;
+    this.hitBoxes = [];
     this.canvas = document.getElementById("main-canvas");
     this.mainText = document.getElementById("main-text");
     this.subText = document.getElementById("sub-text");
@@ -45,10 +48,16 @@ class Picture {
     this.subText.addEventListener("input", () => this.onTextChange());
     this.imageText.addEventListener("change", () => this.onImageChange());
     document.addEventListener("DOMContentLoaded", () => this.onImageDrop());
+    this.downloadButton.addEventListener("click", () => this.download());
+    // Mouse events
     this.canvas.addEventListener("mousedown", (evt) => this.onMouseDown(evt));
     document.addEventListener("mousemove", (evt) => this.onMouseMove(evt));
     document.addEventListener("mouseup", (evt) => this.onMouseUp(evt));
-    this.downloadButton.addEventListener("click", () => this.download());
+    // Touch events
+    this.canvas.addEventListener("touchstart", (evt) => this.onMouseDown(evt));
+    document.addEventListener("touchmove", (evt) => this.onMouseMove(evt));
+    document.addEventListener("touchend", (evt) => this.onMouseUp(evt));
+    document.addEventListener("touchcancel", (evt) => this.onMouseUp(evt));
   }
 
   reset() {
@@ -58,11 +67,13 @@ class Picture {
     } else {
       drawImageProp(this.ctx, this.bgPicture, 0, 0, this.canvas.width, this.canvas.height);
     }
+    // Reset hit boxes
+    this.hitBoxes = []
   }
 
   render() {
     this.reset();
-    drawTextBGWrapped(this.ctx, this.mainText.value, this.subText.value, this.x, this.y);
+    drawTextBGWrapped(this.ctx, this.mainText.value, this.subText.value, this.x, this.y, this.hitBoxes);
     this.saveState();
   }
 
@@ -110,8 +121,14 @@ class Picture {
   }
 
   onMouseDown(evt) {
-    this.dragging = true;
-    this.prevEvt = evt;
+    // Convert click position to canvas position
+    const rect = this.canvas.getBoundingClientRect();
+    const x = evt.clientX - rect.left;
+    const y = evt.clientY - rect.top;
+    if (hitTest(x, y, this.hitBoxes)) {
+      this.dragging = true;
+      this.prevEvt = evt;
+    }
   }
 
   onMouseMove(evt) {
@@ -154,11 +171,23 @@ class Picture {
   }
 }
 
+
+// UTILITY FUNCTIONS
+
+function hitTest(x, y, hitBoxes) {
+  for (box of hitBoxes) {
+    if (box[0] <= x && x <= box[2] && box[1] <= y && y <= box[3]) {
+      return true;
+    }
+  }
+  return false;
+}
+
 function getMovement(prevEvt, evt) {
   return [prevEvt.screenX - evt.screenX, prevEvt.screenY - evt.screenY];
 }
 
-function drawTextBG(ctx, txt, x, y, font, bgColor, textColor) {
+function drawTextBG(ctx, txt, x, y, font, bgColor, textColor, hitBoxes) {
   /// color for background
   ctx.fillStyle = bgColor;
   const width = ctx.measureText(txt).width;
@@ -166,14 +195,19 @@ function drawTextBG(ctx, txt, x, y, font, bgColor, textColor) {
   const padding = width - trimmedWidth;
   /// draw background rect assuming height of font
   const margin = (FONTS[font].distance - FONTS[font].size) / 2;
-  ctx.fillRect(x + padding, y, trimmedWidth + 2*margin, FONTS[font].distance);
+  const rectX = x + padding;
+  const rectY = y;
+  const rectWidth = trimmedWidth + 2*margin;
+  const rectHeight = FONTS[font].distance;
+  ctx.fillRect(rectX, rectY, rectWidth, rectHeight);
+  hitBoxes.push([rectX / SCALE, rectY / SCALE, (rectX + rectWidth) / SCALE, (rectY + rectHeight) / SCALE]);
   /// text color
   ctx.fillStyle = textColor;
   /// draw text on top
   ctx.fillText(txt, x + margin, y);
 }
 
-function drawTextBGWrapped(ctx, mainText, subText, x, y) {
+function drawTextBGWrapped(ctx, mainText, subText, x, y, hitBoxes) {
   ctx.textBaseline = 'top';
 
   // Draw the boxes and text for the headline
@@ -182,7 +216,7 @@ function drawTextBGWrapped(ctx, mainText, subText, x, y) {
   let curY = y;
   for (const line of lines) {
     if (line.length > 0) {
-      drawTextBG(ctx, line, x, curY, "headline", COLORS[2], COLORS[1]);
+      drawTextBG(ctx, line, x, curY, "headline", COLORS[2], COLORS[1], hitBoxes);
     }
     curY += FONTS["headline"].distance - 1;
   }
@@ -190,7 +224,7 @@ function drawTextBGWrapped(ctx, mainText, subText, x, y) {
   // Draw the box and text for the subline if it exists
   if (subText.length > 0) {
     ctx.font = FONTS["subline"].font;
-    drawTextBG(ctx, subText, x, curY, "subline", COLORS[1], COLORS[0]);
+    drawTextBG(ctx, subText, x, curY, "subline", COLORS[1], COLORS[0], hitBoxes);
   }
 }
 
