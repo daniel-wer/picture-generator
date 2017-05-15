@@ -27,8 +27,8 @@ String.prototype.trimLeft = function() {
 class Picture {
 
   constructor() {
-    this.x = 50;
-    this.y = 50;
+    this.x = 100;
+    this.y = 100;
     this.canvas = document.getElementById("main-canvas");
     this.mainText = document.getElementById("main-text");
     this.subText = document.getElementById("sub-text");
@@ -182,7 +182,9 @@ function drawTextBGWrapped(ctx, mainText, subText, x, y) {
   lines = mainText.split("\n");
   let curY = y;
   for (const line of lines) {
-    drawTextBG(ctx, line, x, curY, "headline", COLORS[2], COLORS[1]);
+    if (line.length > 0) {
+      drawTextBG(ctx, line, x, curY, "headline", COLORS[2], COLORS[1]);
+    }
     curY += FONTS["headline"].distance - 1;
   }
 
