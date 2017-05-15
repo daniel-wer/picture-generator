@@ -55,10 +55,10 @@ class Picture {
     document.addEventListener("mousemove", (evt) => this.onMouseMove(evt));
     document.addEventListener("mouseup", (evt) => this.onMouseUp(evt));
     // Touch events
-    this.canvas.addEventListener("touchstart", (evt) => this.onMouseDown(evt));
-    document.addEventListener("touchmove", (evt) => this.onMouseMove(evt));
-    document.addEventListener("touchend", (evt) => this.onMouseUp(evt));
-    document.addEventListener("touchcancel", (evt) => this.onMouseUp(evt));
+    this.canvas.addEventListener("touchstart", (evt) => this.onTouchStart(evt));
+    document.addEventListener("touchmove", (evt) => this.onTouchMove(evt));
+    document.addEventListener("touchend", (evt) => this.onTouchEnd(evt));
+    document.addEventListener("touchcancel", (evt) => this.onTouchEnd(evt));
   }
 
   reset() {
@@ -126,23 +126,57 @@ class Picture {
     const rect = this.canvas.getBoundingClientRect();
     const x = evt.clientX - rect.left;
     const y = evt.clientY - rect.top;
+    this.startDrag(x, y);
+    this.prevEvt = evt;
+  }
+
+  onTouchStart(evt) {
+    // Convert click position to canvas position
+    const rect = this.canvas.getBoundingClientRect();
+    const x = evt.targetTouches[0].clientX - rect.left;
+    const y = evt.targetTouches[0].clientY - rect.top;
+    this.startDrag(x, y);
+    this.prevTouchEvt = evt;
+  }
+
+  startDrag(x, y) {
     if (hitTest(x, y, this.hitBoxes)) {
       this.dragging = true;
-      this.prevEvt = evt;
     }
   }
 
   onMouseMove(evt) {
     if (this.dragging) {
       const [moveX, moveY] = getMovement(this.prevEvt, evt);
-      this.x -= moveX;
-      this.y -= moveY;
       this.prevEvt = evt;
-      this.render();
+      this.moveDrag(moveX, moveY);
     }
   }
 
+  onTouchMove(evt) {
+    console.log(evt)
+    if (this.dragging) {
+      const [moveX, moveY] = getTouchMovement(this.prevTouchEvt, evt);
+      this.prevTouchEvt = evt;
+      this.moveDrag(moveX, moveY);
+    }
+  }
+
+  moveDrag(moveX, moveY) {
+    this.x -= moveX;
+    this.y -= moveY;
+    this.render();
+  }
+
   onMouseUp() {
+    this.stopDrag();
+  }
+
+  onTouchEnd() {
+    this.stopDrag();
+  }
+
+  stopDrag() {
     this.dragging = false;
   }
 
@@ -186,6 +220,13 @@ function hitTest(x, y, hitBoxes) {
 
 function getMovement(prevEvt, evt) {
   return [prevEvt.screenX - evt.screenX, prevEvt.screenY - evt.screenY];
+}
+
+function getTouchMovement(prevEvt, evt) {
+  return [
+    prevEvt.targetTouches[0].screenX - evt.targetTouches[0].screenX,
+    prevEvt.targetTouches[0].screenY - evt.targetTouches[0].screenY
+  ];
 }
 
 function drawTextBG(ctx, txt, x, y, font, bgColor, textColor, hitBoxes) {
