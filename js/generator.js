@@ -56,7 +56,7 @@ class Picture {
     document.addEventListener("mouseup", (evt) => this.onMouseUp(evt));
     // Touch events
     this.canvas.addEventListener("touchstart", (evt) => this.onTouchStart(evt));
-    document.addEventListener("touchmove", (evt) => this.onTouchMove(evt));
+    document.addEventListener("touchmove", (evt) => this.onTouchMove(evt), { passive: false });
     document.addEventListener("touchend", (evt) => this.onTouchEnd(evt));
     document.addEventListener("touchcancel", (evt) => this.onTouchEnd(evt));
   }
@@ -154,11 +154,11 @@ class Picture {
   }
 
   onTouchMove(evt) {
-    console.log(evt)
     if (this.dragging) {
+      evt.preventDefault();
       const [moveX, moveY] = getTouchMovement(this.prevTouchEvt, evt);
       this.prevTouchEvt = evt;
-      this.moveDrag(moveX, moveY);
+      this.moveDrag(moveX * window.devicePixelRatio, moveY * window.devicePixelRatio);
     }
   }
 
