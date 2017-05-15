@@ -4,7 +4,6 @@ const SUBLINE_FONT_SIZE = 40;
 const SUBLINE_FONT = `${SUBLINE_FONT_SIZE}px font122550`;
 const HEADLINE_DISTANCE = HEADLINE_FONT_SIZE / 95 * 120;
 const SUBLINE_DISTANCE = SUBLINE_FONT_SIZE / 95 * 120;
-// yellow, blue, magenta
 const COLORS = ["#009ee3", "#ffed00", "#e5007d"];
 
 const FONTS = {
