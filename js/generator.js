@@ -1,26 +1,22 @@
-const HEADLINE_FONT_SIZE = 90;
-const HEADLINE_FONT = `${HEADLINE_FONT_SIZE}px font118413`;
-const SUBLINE_FONT_SIZE = 40;
-const SUBLINE_FONT = `${SUBLINE_FONT_SIZE}px font122550`;
-const HEADLINE_DISTANCE = HEADLINE_FONT_SIZE / 95 * 120;
-const SUBLINE_DISTANCE = SUBLINE_FONT_SIZE / 95 * 120;
+const DEFAULT_HEADLINE_FONT_SIZE = 90;
+const HEADLINE_FONT = `font118413`;
+const DEFAULT_SUBLINE_FONT_SIZE = 30;
+const SUBLINE_FONT = `font122550`;
 const COLORS = ["#009ee3", "#ffed00", "#e5007d"];
-// canvas size in pixels divided by the size of the canvas html element
-const SCALE = 960 / 900;
+let SCALE;
 
 const FONTS = {
   headline: {
-    size: HEADLINE_FONT_SIZE,
+    size: DEFAULT_HEADLINE_FONT_SIZE,
     font: HEADLINE_FONT,
-    distance: HEADLINE_DISTANCE,
   },
   subline: {
-    size: SUBLINE_FONT_SIZE,
+    size: DEFAULT_SUBLINE_FONT_SIZE,
     font: SUBLINE_FONT,
-    distance: SUBLINE_DISTANCE,
   },
 };
 
+// Polyfill trimLeft function for browsers that aren't supporting it yet
 String.prototype.trimLeft = function() {
     return this.replace(/^\s+/,"");
 }
@@ -31,13 +27,17 @@ class Picture {
     this.x = 100;
     this.y = 100;
     this.hitBoxes = [];
+
     this.canvas = document.getElementById("main-canvas");
     this.mainText = document.getElementById("main-text");
     this.subText = document.getElementById("sub-text");
-    this.imageText = document.getElementById("image-text");
+    this.sizeSlider = document.getElementById("size-slider");
     this.imageDrop = document.getElementById("image-drop");
     this.downloadButton = document.getElementById("download-button");
     this.ctx = this.canvas.getContext("2d");
+
+    // canvas size in pixels divided by the size of the canvas html element
+    SCALE = this.canvas.width / this.canvas.clientWidth;
     this.reset();
     this.attachEventListeners();
     this.restoreState();
@@ -46,7 +46,7 @@ class Picture {
   attachEventListeners() {
     this.mainText.addEventListener("input", () => this.onTextChange());
     this.subText.addEventListener("input", () => this.onTextChange());
-    this.imageText.addEventListener("change", () => this.onImageChange());
+    this.sizeSlider.addEventListener("input", () => this.onSizeChange());
     document.addEventListener("DOMContentLoaded", () => this.onImageDrop());
     this.downloadButton.addEventListener("click", () => this.download());
     // Mouse events
@@ -55,6 +55,7 @@ class Picture {
     document.addEventListener("mouseup", (evt) => this.onMouseUp(evt));
     // Touch events
     this.canvas.addEventListener("touchstart", (evt) => this.onTouchStart(evt));
+    // Set passive to false, so the scrolling can be prevented on mobile
     document.addEventListener("touchmove", (evt) => this.onTouchMove(evt), { passive: false });
     document.addEventListener("touchend", (evt) => this.onTouchEnd(evt));
     document.addEventListener("touchcancel", (evt) => this.onTouchEnd(evt));
@@ -82,32 +83,27 @@ class Picture {
     window.open(url);
   }
 
-  onTextChange(evt) {
+  onTextChange() {
     this.render();
   }
 
-  onImageChange(evt) {
-    const image = new Image();
-    image.onload = () => {
-      this.bgPicture = image;
-      this.render();
-    };
-    image.onerror = () => {
-      this.bgPicture = null;
-      this.reset();
-    };
-    image.src = this.imageText.value;
+  onSizeChange() {
+    FONTS["headline"].size = parseInt(this.sizeSlider.value, 10);
+    FONTS["subline"].size = Math.round(FONTS["headline"].size / 3);
+    this.render();
   }
 
   onImageDrop() {
+    // From the tiny-css documentation: https://picnicss.com/documentation#dropimage
     const _this = this;
-    [].forEach.call(document.querySelectorAll('.dropimage'), function(img) {
+    [].forEach.call(document.querySelectorAll(".dropimage"), function(img) {
       img.onchange = function(e) {
         var inputfile = this, reader = new FileReader();
         reader.onloadend = function(){
           const url = `url(${reader.result})`;
-          inputfile.style['background-image'] = url;
+          inputfile.style["background-image"] = url;
 
+          // Render the image onto the canvas after successful loading
           const image = new Image();
           image.src = reader.result;
           image.onload = () => {
@@ -130,7 +126,7 @@ class Picture {
   }
 
   onTouchStart(evt) {
-    // Convert click position to canvas position
+    // Convert touch position to canvas position
     const rect = this.canvas.getBoundingClientRect();
     const x = evt.targetTouches[0].clientX - rect.left;
     const y = evt.targetTouches[0].clientY - rect.top;
@@ -180,6 +176,8 @@ class Picture {
   }
 
   saveState() {
+    // Persist the current state in the url hash (base64 encoded)
+    // Debounce this function to avoid performance hit
     this.saveState = debounce(() => {
       const state = {
         x: this.x,
@@ -193,6 +191,7 @@ class Picture {
   }
 
   restoreState() {
+    // Restore base64 encoded state from the url hash, if present
     const hash = location.hash;
     if (hash.length) {
       const state = JSON.parse(atob(hash.slice(1)));
@@ -209,6 +208,7 @@ class Picture {
 // UTILITY FUNCTIONS
 
 function hitTest(x, y, hitBoxes) {
+  // Test whether the x,y coordinate is inside one of the hit boxes
   for (box of hitBoxes) {
     if (box[0] <= x && x <= box[2] && box[1] <= y && y <= box[3]) {
       return true;
@@ -218,10 +218,12 @@ function hitTest(x, y, hitBoxes) {
 }
 
 function getMovement(prevEvt, evt) {
+  // Get the change in x and y between the previous and current mouse event
   return [prevEvt.screenX - evt.screenX, prevEvt.screenY - evt.screenY];
 }
 
 function getTouchMovement(prevEvt, evt) {
+  // Get the change in x and y between the previous and current touch event
   return [
     prevEvt.targetTouches[0].screenX - evt.targetTouches[0].screenX,
     prevEvt.targetTouches[0].screenY - evt.targetTouches[0].screenY
@@ -229,42 +231,45 @@ function getTouchMovement(prevEvt, evt) {
 }
 
 function drawTextBG(ctx, txt, x, y, font, bgColor, textColor, hitBoxes) {
-  /// color for background
-  ctx.fillStyle = bgColor;
+  // As spaces are used to "move" individual lines to the right, measure the text with and without spaces
   const width = ctx.measureText(txt).width;
   const trimmedWidth = ctx.measureText(txt.trimLeft()).width;
   const padding = width - trimmedWidth;
-  /// draw background rect assuming height of font
-  const margin = (FONTS[font].distance - FONTS[font].size) / 2;
+
+  // Draw background rectangle
+  const margin = (getFontDistance(FONTS[font]) - FONTS[font].size) / 2;
   const rectX = x + padding;
   const rectY = y;
   const rectWidth = trimmedWidth + 2*margin;
-  const rectHeight = FONTS[font].distance;
+  const rectHeight = getFontDistance(FONTS[font]);
+  ctx.fillStyle = bgColor;
   ctx.fillRect(rectX, rectY, rectWidth, rectHeight);
+  // Push the rectangle into the hitBoxes array for drag/drop
   hitBoxes.push([rectX / SCALE, rectY / SCALE, (rectX + rectWidth) / SCALE, (rectY + rectHeight) / SCALE]);
-  /// text color
+
+  // Draw text
   ctx.fillStyle = textColor;
-  /// draw text on top
   ctx.fillText(txt, x + margin, y);
 }
 
 function drawTextBGWrapped(ctx, mainText, subText, x, y, hitBoxes) {
-  ctx.textBaseline = 'top';
+  ctx.textBaseline = "top";
 
   // Draw the boxes and text for the headline
-  ctx.font = FONTS["headline"].font;
+  ctx.font = getCanvasFont(FONTS["headline"]);
   lines = mainText.split("\n");
   let curY = y;
   for (const line of lines) {
     if (line.length > 0) {
       drawTextBG(ctx, line, x, curY, "headline", COLORS[2], COLORS[1], hitBoxes);
     }
-    curY += FONTS["headline"].distance - 1;
+    // Increase curY to draw the next line
+    curY += getFontDistance(FONTS["headline"]) - 1;
   }
 
   // Draw the box and text for the subline if it exists
   if (subText.length > 0) {
-    ctx.font = FONTS["subline"].font;
+    ctx.font = getCanvasFont(FONTS["subline"]);
     drawTextBG(ctx, subText, x, curY, "subline", COLORS[1], COLORS[0], hitBoxes);
   }
 }
@@ -275,6 +280,8 @@ function drawTextBGWrapped(ctx, mainText, subText, x, y, hitBoxes) {
  * drawImageProp(context, image [, x, y, width, height [,offsetX, offsetY]])
  *
  * If image and context are only arguments rectangle will equal canvas
+ *
+ * Scales an image to fit the canvas
 */
 function drawImageProp(ctx, img, x, y, w, h, offsetX, offsetY) {
 
@@ -339,5 +346,13 @@ function debounce(func, wait, immediate) {
     if (callNow) func.apply(context, args);
   };
 };
+
+function getCanvasFont(font) {
+  return `${font.size}px ${font.font}`;
+}
+
+function getFontDistance(font) {
+  return font.size / 95 * 120;
+}
 
 const picture = new Picture();
