@@ -1,8 +1,12 @@
 const DEFAULT_HEADLINE_FONT_SIZE = 90;
-const HEADLINE_FONT = `font118413`;
+const HEADLINE_FONT = "font118413";
 const DEFAULT_SUBLINE_FONT_SIZE = 30;
-const SUBLINE_FONT = `font122550`;
-const COLORS = ["#009ee3", "#ffed00", "#e5007d"];
+const SUBLINE_FONT = "font122550";
+// [background, headline_background, headline_font, subline_background, subline_font]
+const THEMES = [
+  // blue, magenta, yellow, yellow, blue
+  ["#009ee3", "#e5007d", "#ffed00", "#ffed00", "#009ee3"],
+]
 let SCALE;
 
 const FONTS = {
@@ -27,6 +31,7 @@ class Picture {
     this.x = 100;
     this.y = 100;
     this.hitBoxes = [];
+    this.theme = 0;
 
     this.canvas = document.getElementById("main-canvas");
     this.mainText = document.getElementById("main-text");
@@ -63,7 +68,7 @@ class Picture {
 
   reset() {
     if (!this.bgPicture) {
-      this.ctx.fillStyle = "#009ee3";
+      this.ctx.fillStyle = THEMES[this.theme][0];
       this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
     } else {
       drawImageProp(this.ctx, this.bgPicture, 0, 0, this.canvas.width, this.canvas.height);
@@ -74,7 +79,7 @@ class Picture {
 
   render() {
     this.reset();
-    drawTextBGWrapped(this.ctx, this.mainText.value, this.subText.value, this.x, this.y, this.hitBoxes);
+    drawTextBGWrapped(this.ctx, this.mainText.value, this.subText.value, this.x, this.y, THEMES[this.theme], this.hitBoxes);
     this.saveState();
   }
 
@@ -184,6 +189,7 @@ class Picture {
         y: this.y,
         h: this.mainText.value,
         s: this.subText.value,
+        f: FONTS["headline"].size,
       }
       location.hash = `#${btoa(JSON.stringify(state))}`;
     }, 250);
@@ -197,8 +203,10 @@ class Picture {
       const state = JSON.parse(atob(hash.slice(1)));
       this.x = state.x || this.x;
       this.y = state.y || this.y;
-      this.mainText.value = state.h;
-      this.subText.value = state.s;
+      this.mainText.value = state.h || "";
+      this.subText.value = state.s || "";
+      this.sizeSlider.value = "" + state.f || this.sizeSlider.value;
+      this.onSizeChange();
       this.render();
     }
   }
@@ -252,7 +260,7 @@ function drawTextBG(ctx, txt, x, y, font, bgColor, textColor, hitBoxes) {
   ctx.fillText(txt, x + margin, y);
 }
 
-function drawTextBGWrapped(ctx, mainText, subText, x, y, hitBoxes) {
+function drawTextBGWrapped(ctx, mainText, subText, x, y, theme, hitBoxes) {
   ctx.textBaseline = "top";
 
   // Draw the boxes and text for the headline
@@ -261,7 +269,7 @@ function drawTextBGWrapped(ctx, mainText, subText, x, y, hitBoxes) {
   let curY = y;
   for (const line of lines) {
     if (line.length > 0) {
-      drawTextBG(ctx, line, x, curY, "headline", COLORS[2], COLORS[1], hitBoxes);
+      drawTextBG(ctx, line, x, curY, "headline", theme[1], theme[2], hitBoxes);
     }
     // Increase curY to draw the next line
     curY += getFontDistance(FONTS["headline"]) - 1;
@@ -270,7 +278,7 @@ function drawTextBGWrapped(ctx, mainText, subText, x, y, hitBoxes) {
   // Draw the box and text for the subline if it exists
   if (subText.length > 0) {
     ctx.font = getCanvasFont(FONTS["subline"]);
-    drawTextBG(ctx, subText, x, curY, "subline", COLORS[1], COLORS[0], hitBoxes);
+    drawTextBG(ctx, subText, x, curY, "subline", theme[3], theme[4], hitBoxes);
   }
 }
 
