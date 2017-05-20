@@ -6,7 +6,7 @@ const SUBLINE_FONT = "font122550";
 const THEMES = [
   // blue, magenta, yellow, yellow, blue
   ["#009ee3", "#e5007d", "#ffed00", "#ffed00", "#009ee3"],
-]
+];
 let SCALE;
 
 const FONTS = {
@@ -21,9 +21,9 @@ const FONTS = {
 };
 
 // Polyfill trimLeft function for browsers that aren't supporting it yet
-String.prototype.trimLeft = function() {
-    return this.replace(/^\s+/,"");
-}
+String.prototype.trimLeft = function () {
+  return this.replace(/^\s+/, "");
+};
 
 class Picture {
 
@@ -55,15 +55,15 @@ class Picture {
     document.addEventListener("DOMContentLoaded", () => this.onImageDrop());
     this.downloadButton.addEventListener("click", () => this.download());
     // Mouse events
-    this.canvas.addEventListener("mousedown", (evt) => this.onMouseDown(evt));
-    document.addEventListener("mousemove", (evt) => this.onMouseMove(evt));
-    document.addEventListener("mouseup", (evt) => this.onMouseUp(evt));
+    this.canvas.addEventListener("mousedown", evt => this.onMouseDown(evt));
+    document.addEventListener("mousemove", evt => this.onMouseMove(evt));
+    document.addEventListener("mouseup", evt => this.onMouseUp(evt));
     // Touch events
-    this.canvas.addEventListener("touchstart", (evt) => this.onTouchStart(evt));
+    this.canvas.addEventListener("touchstart", evt => this.onTouchStart(evt));
     // Set passive to false, so the scrolling can be prevented on mobile
-    document.addEventListener("touchmove", (evt) => this.onTouchMove(evt), { passive: false });
-    document.addEventListener("touchend", (evt) => this.onTouchEnd(evt));
-    document.addEventListener("touchcancel", (evt) => this.onTouchEnd(evt));
+    document.addEventListener("touchmove", evt => this.onTouchMove(evt), { passive: false });
+    document.addEventListener("touchend", evt => this.onTouchEnd(evt));
+    document.addEventListener("touchcancel", evt => this.onTouchEnd(evt));
   }
 
   reset() {
@@ -74,7 +74,7 @@ class Picture {
       drawImageProp(this.ctx, this.bgPicture, 0, 0, this.canvas.width, this.canvas.height);
     }
     // Reset hit boxes
-    this.hitBoxes = []
+    this.hitBoxes = [];
   }
 
   render() {
@@ -93,18 +93,19 @@ class Picture {
   }
 
   onSizeChange() {
-    FONTS["headline"].size = parseInt(this.sizeSlider.value, 10);
-    FONTS["subline"].size = Math.round(FONTS["headline"].size / 3);
+    FONTS.headline.size = parseInt(this.sizeSlider.value, 10);
+    FONTS.subline.size = Math.round(FONTS.headline.size / 3);
     this.render();
   }
 
   onImageDrop() {
     // From the tiny-css documentation: https://picnicss.com/documentation#dropimage
     const _this = this;
-    [].forEach.call(document.querySelectorAll(".dropimage"), function(img) {
-      img.onchange = function(e) {
-        var inputfile = this, reader = new FileReader();
-        reader.onloadend = function(){
+    [].forEach.call(document.querySelectorAll(".dropimage"), (img) => {
+      img.onchange = function (e) {
+        const inputfile = this;
+        const reader = new FileReader();
+        reader.onloadend = function () {
           const url = `url(${reader.result})`;
           inputfile.style["background-image"] = url;
 
@@ -115,9 +116,9 @@ class Picture {
             _this.bgPicture = image;
             _this.render();
           };
-        }
+        };
         reader.readAsDataURL(e.target.files[0]);
-      }
+      };
     });
   }
 
@@ -189,8 +190,8 @@ class Picture {
         y: this.y,
         h: this.mainText.value,
         s: this.subText.value,
-        f: FONTS["headline"].size,
-      }
+        f: FONTS.headline.size,
+      };
       location.hash = `#${btoa(JSON.stringify(state))}`;
     }, 250);
     this.saveState();
@@ -205,7 +206,7 @@ class Picture {
       this.y = state.y || this.y;
       this.mainText.value = state.h || "";
       this.subText.value = state.s || "";
-      this.sizeSlider.value = "" + state.f || this.sizeSlider.value;
+      this.sizeSlider.value = `${state.f}` || this.sizeSlider.value;
       this.onSizeChange();
       this.render();
     }
@@ -217,7 +218,7 @@ class Picture {
 
 function hitTest(x, y, hitBoxes) {
   // Test whether the x,y coordinate is inside one of the hit boxes
-  for (box of hitBoxes) {
+  for (const box of hitBoxes) {
     if (box[0] <= x && x <= box[2] && box[1] <= y && y <= box[3]) {
       return true;
     }
@@ -234,7 +235,7 @@ function getTouchMovement(prevEvt, evt) {
   // Get the change in x and y between the previous and current touch event
   return [
     prevEvt.targetTouches[0].screenX - evt.targetTouches[0].screenX,
-    prevEvt.targetTouches[0].screenY - evt.targetTouches[0].screenY
+    prevEvt.targetTouches[0].screenY - evt.targetTouches[0].screenY,
   ];
 }
 
@@ -248,7 +249,7 @@ function drawTextBG(ctx, txt, x, y, font, bgColor, textColor, hitBoxes) {
   const margin = (getFontDistance(FONTS[font]) - FONTS[font].size) / 2;
   const rectX = x + padding;
   const rectY = y;
-  const rectWidth = trimmedWidth + 2*margin;
+  const rectWidth = trimmedWidth + 2 * margin;
   const rectHeight = getFontDistance(FONTS[font]);
   ctx.fillStyle = bgColor;
   ctx.fillRect(rectX, rectY, rectWidth, rectHeight);
@@ -264,20 +265,20 @@ function drawTextBGWrapped(ctx, mainText, subText, x, y, theme, hitBoxes) {
   ctx.textBaseline = "top";
 
   // Draw the boxes and text for the headline
-  ctx.font = getCanvasFont(FONTS["headline"]);
-  lines = mainText.split("\n");
+  ctx.font = getCanvasFont(FONTS.headline);
+  const lines = mainText.split("\n");
   let curY = y;
   for (const line of lines) {
     if (line.length > 0) {
       drawTextBG(ctx, line, x, curY, "headline", theme[1], theme[2], hitBoxes);
     }
     // Increase curY to draw the next line
-    curY += getFontDistance(FONTS["headline"]) - 1;
+    curY += getFontDistance(FONTS.headline) - 1;
   }
 
   // Draw the box and text for the subline if it exists
   if (subText.length > 0) {
-    ctx.font = getCanvasFont(FONTS["subline"]);
+    ctx.font = getCanvasFont(FONTS.subline);
     drawTextBG(ctx, subText, x, curY, "subline", theme[3], theme[4], hitBoxes);
   }
 }
@@ -292,9 +293,9 @@ function drawTextBGWrapped(ctx, mainText, subText, x, y, theme, hitBoxes) {
  * Scales an image to fit the canvas
 */
 function drawImageProp(ctx, img, x, y, w, h, offsetX, offsetY) {
-
   if (arguments.length === 2) {
-    x = y = 0;
+    x = 0;
+    y = 0;
     w = ctx.canvas.width;
     h = ctx.canvas.height;
   }
@@ -309,25 +310,25 @@ function drawImageProp(ctx, img, x, y, w, h, offsetX, offsetY) {
   if (offsetX > 1) offsetX = 1;
   if (offsetY > 1) offsetY = 1;
 
-  var iw = img.width,
-    ih = img.height,
-    r = Math.min(w / iw, h / ih),
-    nw = iw * r,   // new prop. width
-    nh = ih * r,   // new prop. height
-    cx, cy, cw, ch, ar = 1;
+  const iw = img.width;
+  const ih = img.height;
+  const r = Math.min(w / iw, h / ih);
+  let nw = iw * r; // new prop. width
+  let nh = ih * r; // new prop. height
+  let ar = 1;
 
-  // decide which gap to fill    
-  if (nw < w) ar = w / nw;                             
+  // decide which gap to fill
+  if (nw < w) ar = w / nw;
   if (Math.abs(ar - 1) < 1e-14 && nh < h) ar = h / nh;  // updated
   nw *= ar;
   nh *= ar;
 
   // calc source rectangle
-  cw = iw / (nw / w);
-  ch = ih / (nh / h);
+  let cw = iw / (nw / w);
+  let ch = ih / (nh / h);
 
-  cx = (iw - cw) * offsetX;
-  cy = (ih - ch) * offsetY;
+  let cx = (iw - cw) * offsetX;
+  let cy = (ih - ch) * offsetY;
 
   // make sure source rectangle is valid
   if (cx < 0) cx = 0;
@@ -336,24 +337,24 @@ function drawImageProp(ctx, img, x, y, w, h, offsetX, offsetY) {
   if (ch > ih) ch = ih;
 
   // fill image in dest. rectangle
-  ctx.drawImage(img, cx, cy, cw, ch,  x, y, w, h);
+  ctx.drawImage(img, cx, cy, cw, ch, x, y, w, h);
 }
 
 // https://davidwalsh.name/javascript-debounce-function
 function debounce(func, wait, immediate) {
-  var timeout;
-  return function() {
-    var context = this, args = arguments;
-    var later = function() {
+  let timeout;
+  return function (...args) {
+    const context = this;
+    const later = function () {
       timeout = null;
       if (!immediate) func.apply(context, args);
     };
-    var callNow = immediate && !timeout;
+    const callNow = immediate && !timeout;
     clearTimeout(timeout);
     timeout = setTimeout(later, wait);
     if (callNow) func.apply(context, args);
   };
-};
+}
 
 function getCanvasFont(font) {
   return `${font.size}px ${font.font}`;
@@ -363,4 +364,4 @@ function getFontDistance(font) {
   return font.size / 95 * 120;
 }
 
-const picture = new Picture();
+Picture();
