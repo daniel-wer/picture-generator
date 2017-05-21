@@ -364,4 +364,5 @@ function getFontDistance(font) {
   return font.size / 95 * 120;
 }
 
-Picture();
+// eslint-disable-next-line no-unused-vars
+const picture = new Picture();
